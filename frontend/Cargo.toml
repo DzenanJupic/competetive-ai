@@ -1,0 +1,17 @@
+[package]
+name = "frontend"
+version = "0.1.0"
+authors = ["Dzenan Jupic <56133904+DzenanJupic@users.noreply.github.com>"]
+edition = "2018"
+
+[dependencies]
+console_error_panic_hook = "0.1.6"
+log = "0.4.11"
+seed = "0.8.0"
+serde = { version = "1.0.118", default-features = false }
+wasm-bindgen = "=0.2.69"
+wasm-logger = "0.2.0"
+wee_alloc = "0.4.5"
+
+[profile.release]
+#panic = "abort"
