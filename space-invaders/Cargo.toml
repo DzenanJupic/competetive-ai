@@ -1,0 +1,9 @@
+[package]
+name = "space-invaders"
+version = "0.1.0"
+authors = ["Dzenan Jupic <56133904+DzenanJupic@users.noreply.github.com>"]
+edition = "2018"
+
+[dependencies]
+array-init = "1.0.0"
+rand = "0.8.1"

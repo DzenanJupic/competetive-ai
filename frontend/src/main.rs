@@ -55,8 +55,7 @@ impl Model {
             style! { St::Height => "calc(100vh - 2 * 56px)" },
             
             div![
-                C!["container-fluid", "d-flex", "align-items-center", "h-100"],
-                
+                C!["container-xxl", "d-flex", "align-items-center", "h-100"],
                 div![
                     C!["row", "mx-auto", "mx-md-n5", "h-75", "w-100"],
                     (1..=2).map(Self::view_team_card)
