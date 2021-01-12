@@ -1,12 +1,58 @@
-use crate::{Bullet, BulletDirection, GameObj, Position, StepResult};
+use crate::{Bullet, GameObj, GetHit, HitResult, PlayField, Position, Unit, WouldHit};
+use crate::cannon::Cannon;
+
+pub struct Bunkers {
+    position: Position,
+    bunkers: [Option<Bunker>; Bunkers::BUNKERS],
+}
+
+impl Bunkers {
+    pub const BUNKERS: usize = 4;
+    pub const GRID_GAP: Unit = Bunker::WIDTH;
+
+    pub fn new() -> Self {
+        const BASE_POSITION: Position = Position {
+            x: (PlayField::WIDTH - Bunkers::WIDTH) / 2,
+            y: PlayField::HEIGHT - (Cannon::HEIGHT * 3),
+        };
+
+        Self {
+            position: BASE_POSITION,
+            bunkers: array_init::array_init(|col| {
+                Some(Bunker::at_position(Position {
+                    x: BASE_POSITION.x + col * (Bunker::WIDTH + Bunkers::GRID_GAP),
+                    y: BASE_POSITION.y,
+                }))
+            }),
+        }
+    }
+}
+
+impl GameObj for Bunkers {
+    const WIDTH: usize = Bunker::WIDTH * Self::BUNKERS + (Self::BUNKERS - 1) * Self::GRID_GAP;
+    const HEIGHT: usize = Bunker::HEIGHT;
+
+    fn position(&self) -> Position {
+        self.position
+    }
+}
+
+impl WouldHit for Bunkers {
+    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut dyn GetHit> {
+        self.bunkers
+            .iter_mut()
+            .filter_map(Option::as_mut)
+            .find_map(|b| b.would_hit(bullet))
+    }
+}
 
 pub struct Bunker {
     position: Position,
-    stable: [[bool; Bunker::WIDTH]; Bunker::HEIGHT],
+    stable: [[bool; Bunker::HEIGHT]; Bunker::WIDTH],
 }
 
 impl Bunker {
-    const STABILITY: [[bool; Self::WIDTH]; Self::HEIGHT] = [
+    const STABILITY: [[bool; Self::HEIGHT]; Self::WIDTH] = [
         [true, true, true],
         [true, true, true],
         [true, false, true],
@@ -19,33 +65,13 @@ impl Bunker {
         }
     }
 
-    fn process_bullet(&mut self, bullet: &Bullet) {
-        let x = bullet.position.x - self.position.x;
-        assert!(matches!(x, 0..=Self::WIDTH));
-        let y = bullet.position.y - self.position.y;
-        assert!(y == 0 || y == Self::HEIGHT - 1);
-
-        let range = match bullet.direction {
-            BulletDirection::Upwards => (0..Self::HEIGHT).step_by(1),
-            BulletDirection::Downwards => (Self::HEIGHT + 1..=0).step_by(-1)
-        };
-
-        for y in range {
-            let is_stable = &mut self.stable[x][y];
-            if is_stable {
-                *is_stable = false;
-                return;
-            }
-        }
-    }
-
     fn is_destroyed(&self) -> bool {
         self.stable
             .iter()
             .all(|row| {
                 row
                     .iter()
-                    .all(|b| !*b)
+                    .all(|is_stable| !*is_stable)
             })
     }
 }
@@ -54,18 +80,32 @@ impl GameObj for Bunker {
     const WIDTH: usize = 3;
     const HEIGHT: usize = 3;
 
-    fn step(&mut self, hit: &mut Option<Bullet>) -> StepResult {
-        let survived = match hit {
-            Some(bullet) => {
-                self.process_bullet(bullet);
-                !self.is_destroyed()
-            }
-            None => true
-        };
+    fn position(&self) -> Position {
+        self.position
+    }
+}
 
-        StepResult {
-            survived,
-            shot: None,
+impl WouldHit for Bunker {
+    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut dyn GetHit> {
+        if !self.overlaps(bullet) { return None; }
+        let x = bullet.position().x - self.position.x;
+        let y = bullet.position().y - self.position.y;
+
+        self
+            .stable[x][y]
+            .then_some(self)
+    }
+}
+
+impl GetHit for Bunker {
+    fn hit(&mut self, bullet: &Bullet, _score: &mut i64) -> HitResult {
+        let x = bullet.position().x - self.position.x;
+        let y = bullet.position().y - self.position.y;
+        self.stable[x][y] = false;
+
+        HitResult {
+            survived: !self.is_destroyed(),
+            absorbed_bullet: true,
         }
     }
 }

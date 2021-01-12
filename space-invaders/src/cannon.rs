@@ -1,12 +1,19 @@
-use crate::{Bullet, GameObj, PlayField, Position, StepResult};
+use crate::{Bullet, GameObj, GetHit, PlayField, Position, WouldHit};
 
 pub struct Cannon {
     position: Position
 }
 
 impl Cannon {
-    pub fn position(&self) -> Position {
-        self.position
+    pub const fn new() -> Self {
+        const BASE_POSITION: Position = Position {
+            x: (PlayField::WIDTH - Cannon::WIDTH) / 2,
+            y: PlayField::HEIGHT - Cannon::HEIGHT,
+        };
+
+        Self {
+            position: BASE_POSITION
+        }
     }
 
     pub(crate) fn move_right(&mut self) {
@@ -20,16 +27,30 @@ impl Cannon {
             self.position.x -= 1;
         }
     }
+
+    pub(crate) fn shoot(&self) -> Bullet {
+        Bullet::player_at_position(Position {
+            x: self.position.x + Self::HEIGHT / 2,
+            y: self.position.y,
+        })
+    }
 }
 
 impl GameObj for Cannon {
     const WIDTH: usize = 2;
     const HEIGHT: usize = 2;
 
-    fn step(&mut self, hit: &mut Option<Bullet>) -> StepResult {
-        StepResult {
-            survived: hit.is_none(),
-            shot: None,
-        }
+    fn position(&self) -> Position {
+        self.position
     }
 }
+
+impl WouldHit for Cannon {
+    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut dyn GetHit> {
+        self
+            .overlaps(bullet)
+            .then_some(self)
+    }
+}
+
+impl GetHit for Cannon {}

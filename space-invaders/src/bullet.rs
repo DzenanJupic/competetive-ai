@@ -1,18 +1,37 @@
-use crate::{GameObj, Position, StepResult};
+use alloc::vec::Vec;
+
+use crate::{GameObj, Position, Step, StepResult};
 use crate::alien::AlienType;
+
+pub enum Shot {
+    One(Bullet),
+    Many(Vec<Bullet>),
+    None,
+}
 
 pub struct Bullet {
     position: Position,
     direction: BulletDirection,
+    // just in case, we want different bullets for different aliens
+    // otherwise, this field is useless
     alien_type: Option<AlienType>,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum BulletDirection {
     Upwards,
     Downwards,
 }
 
 impl Bullet {
+    pub(crate) fn is_alien_bullet(&self) -> bool {
+        self.alien_type.is_some()
+    }
+
+    pub(crate) fn direction(&self) -> BulletDirection {
+        self.direction
+    }
+
     pub(crate) fn player_at_position(position: Position) -> Self {
         Self {
             position,
@@ -34,12 +53,17 @@ impl GameObj for Bullet {
     const WIDTH: usize = 22;
     const HEIGHT: usize = 48;
 
-    fn step(&mut self, hit: &mut Option<Bullet>) -> StepResult {
-        assert!(hit.is_none());
+    fn position(&self) -> Position {
+        self.position
+    }
+}
+
+impl Step for Bullet {
+    fn step(&mut self) -> StepResult {
         match self.direction {
             BulletDirection::Upwards => self.position.y -= 1,
             BulletDirection::Downwards => self.position.y += 1,
         }
-        StepResult { survived: true, shot: None }
+        StepResult::default()
     }
 }
