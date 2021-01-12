@@ -1,0 +1,10 @@
+exit_on_error true
+
+exec --fail-on-error rustup toolchain install nightly --allow-downgrade
+exec --fail-on-error rustup default nightly
+exec --fail-on-error rustup target add wasm32-unknown-unknown
+
+exec --fail-on-error cargo install wasm-bindgen-cli
+exec --fail-on-error cargo install trunk
+
+exec duck build.ds
