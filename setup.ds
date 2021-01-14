@@ -6,5 +6,3 @@ exec --fail-on-error rustup target add wasm32-unknown-unknown
 
 exec --fail-on-error cargo install wasm-bindgen-cli
 exec --fail-on-error cargo install trunk
-
-exec duck build.ds

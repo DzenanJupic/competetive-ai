@@ -1,5 +1,4 @@
-#![feature(drain_filter)]
-#![feature(bool_to_option)]
+#![feature(drain_filter, bool_to_option)]
 #![no_std]
 
 extern crate alloc;
@@ -11,10 +10,10 @@ use crate::bullet::{Bullet, Shot};
 use crate::bunker::Bunkers;
 use crate::cannon::Cannon;
 
-mod alien;
-mod bullet;
-mod bunker;
-mod cannon;
+pub mod alien;
+pub mod bullet;
+pub mod bunker;
+pub mod cannon;
 
 pub type Unit = usize;
 pub type Score = i64;
@@ -122,10 +121,10 @@ impl Default for HitResult {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Instruction {
     MoveRight,
     MoveLeft,
-    Shoot,
     None,
 }
 
@@ -141,8 +140,8 @@ pub struct PlayField {
 }
 
 impl PlayField {
-    pub const HEIGHT: Unit = 40;
-    pub const WIDTH: Unit = 75;
+    pub const HEIGHT: Unit = 256;
+    pub const WIDTH: Unit = 224;
     pub const PLAYER_LIVES: usize = 3;
 
     pub fn new() -> Self {
@@ -177,12 +176,15 @@ impl PlayField {
         self.lives
     }
 
-    pub fn step(&mut self, instruction: Instruction) -> Survived {
+    pub fn step(&mut self, instruction: Instruction, shoot: bool) -> Survived {
         match instruction {
             Instruction::MoveRight => self.cannon.move_right(),
             Instruction::MoveLeft => self.cannon.move_left(),
-            Instruction::Shoot => self.bullets.push(self.cannon.shoot()),
             Instruction::None => {}
+        }
+
+        if shoot {
+            self.bullets.push(self.cannon.shoot());
         }
 
         // todo: handle all aliens died

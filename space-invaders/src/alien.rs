@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use core::slice::Iter;
 
 use rand::Rng;
 
@@ -35,6 +36,10 @@ impl Aliens {
                 })
             }),
         }
+    }
+
+    pub fn iter(&self) -> Iter<'_, [Option<Alien>; 5]> {
+        self.aliens.iter()
     }
 }
 
