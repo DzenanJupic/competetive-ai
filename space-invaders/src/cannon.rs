@@ -37,8 +37,8 @@ impl Cannon {
 }
 
 impl GameObj for Cannon {
-    const WIDTH: usize = 2;
-    const HEIGHT: usize = 2;
+    const WIDTH: usize = 15;
+    const HEIGHT: usize = 8;
 
     fn position(&self) -> Position {
         self.position

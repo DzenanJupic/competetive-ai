@@ -50,8 +50,8 @@ impl Bullet {
 }
 
 impl GameObj for Bullet {
-    const WIDTH: usize = 22;
-    const HEIGHT: usize = 48;
+    const WIDTH: usize = 1;
+    const HEIGHT: usize = 3;
 
     fn position(&self) -> Position {
         self.position

@@ -14,7 +14,7 @@ pub struct Aliens {
 impl Aliens {
     pub const ROWS: usize = 5;
     pub const COLUMNS: usize = 11;
-    pub const GRID_GAP: Unit = 1;
+    pub const GRID_GAP: Unit = Alien::WIDTH / 2;
 
     pub fn new() -> Self {
         const BASE_POSITION: Position = Position {
@@ -112,8 +112,8 @@ impl Alien {
 }
 
 impl GameObj for Alien {
-    const WIDTH: usize = 4;
-    const HEIGHT: usize = 4;
+    const WIDTH: usize = 12;
+    const HEIGHT: usize = 8;
 
     fn position(&self) -> Position {
         self.position
@@ -199,9 +199,9 @@ impl AlienType {
     pub fn shoot_probability(&self) -> f64 {
         match self {
             Self::Mystery => 0.,
-            Self::Hard => 0.5,
-            Self::Medium => 0.3,
-            Self::Easy => 0.2
+            Self::Hard => 0.001,
+            Self::Medium => 0.0008,
+            Self::Easy => 0.0005
         }
     }
 }

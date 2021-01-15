@@ -122,10 +122,10 @@ impl Model {
         let ctx = seed::canvas_context_2d(&canvas);
 
         Self::clear_canvas(&canvas, &ctx);
+        Self::draw_bullets(&ctx, self.play_field.bullets());
         Self::draw_aliens(&ctx, self.play_field.aliens());
         Self::draw_bunkers(&ctx, self.play_field.bunkers());
         Self::draw_cannon(&ctx, self.play_field.cannon().position());
-        Self::draw_bullets(&ctx, self.play_field.bullets())
     }
 
     fn clear_canvas(canvas: &HtmlCanvasElement, ctx: &CanvasRenderingContext2d) {
@@ -250,7 +250,6 @@ impl Model {
         GREEN.with(|white| {
             ctx.set_fill_style(white)
         });
-
 
         ctx.fill_rect(x as f64 + 7., y as f64 + 0., 1., 1.);
         ctx.fill_rect(x as f64 + 6., y as f64 + 1., 3., 2.);

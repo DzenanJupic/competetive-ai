@@ -15,7 +15,7 @@ impl Bunkers {
     pub fn new() -> Self {
         const BASE_POSITION: Position = Position {
             x: (PlayField::WIDTH - Bunkers::WIDTH) / 2,
-            y: PlayField::HEIGHT - (Cannon::HEIGHT * 3),
+            y: PlayField::HEIGHT - (Cannon::HEIGHT * 5),
         };
 
         Self {
@@ -54,14 +54,29 @@ impl WouldHit for Bunkers {
 
 pub struct Bunker {
     position: Position,
-    stable: [[bool; Bunker::HEIGHT]; Bunker::WIDTH],
+    stable: [[bool; Bunker::WIDTH]; Bunker::HEIGHT],
 }
 
 impl Bunker {
-    const STABILITY: [[bool; Self::HEIGHT]; Self::WIDTH] = [
-        [true, true, true],
-        [true, true, true],
-        [true, false, true],
+    const STABILITY: [[bool; Self::WIDTH]; Self::HEIGHT] = [
+        [false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false],
+        [false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false],
+        [false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false],
+        [true; 24],
+        [true; 24],
+        [true; 24],
+        [true; 24],
+        [true; 24],
+        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
     ];
 
     pub fn at_position(position: Position) -> Self {
@@ -83,8 +98,8 @@ impl Bunker {
 }
 
 impl GameObj for Bunker {
-    const WIDTH: usize = 3;
-    const HEIGHT: usize = 3;
+    const WIDTH: usize = 24;
+    const HEIGHT: usize = 18;
 
     fn position(&self) -> Position {
         self.position
@@ -98,7 +113,7 @@ impl WouldHit for Bunker {
         let y = bullet.position().y - self.position.y;
 
         self
-            .stable[x][y]
+            .stable[y][x]
             .then_some(self)
     }
 }
