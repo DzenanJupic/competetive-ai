@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 array-init = "1.0.0"
 rand = "0.8.1"
+getrandom = { version = "0.2.1", features = ["wasm-bindgen", "js"] }

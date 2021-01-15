@@ -22,8 +22,8 @@ pub type AbsorbedHit = bool;
 
 #[derive(Clone, Copy, Default, Debug)]
 pub struct Position {
-    x: Unit,
-    y: Unit,
+    pub x: Unit,
+    pub y: Unit,
 }
 
 impl Position {
@@ -163,6 +163,8 @@ impl PlayField {
     pub fn bunkers(&self) -> &Bunkers {
         &self.bunkers
     }
+
+    pub fn bullets(&self) -> &Vec<Bullet> { &self.bullets }
 
     pub fn cannon(&self) -> &Cannon {
         &self.cannon

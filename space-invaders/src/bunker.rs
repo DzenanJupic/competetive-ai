@@ -1,3 +1,5 @@
+use core::slice::Iter;
+
 use crate::{Bullet, GameObj, GetHit, HitResult, PlayField, Position, Unit, WouldHit};
 use crate::cannon::Cannon;
 
@@ -25,6 +27,10 @@ impl Bunkers {
                 }))
             }),
         }
+    }
+
+    pub fn iter(&self) -> Iter<'_, Option<Bunker>> {
+        self.bunkers.iter()
     }
 }
 

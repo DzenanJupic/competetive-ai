@@ -105,6 +105,12 @@ pub struct Alien {
     position: Position,
 }
 
+impl Alien {
+    pub fn alien_type(&self) -> AlienType {
+        self.alien_type
+    }
+}
+
 impl GameObj for Alien {
     const WIDTH: usize = 4;
     const HEIGHT: usize = 4;

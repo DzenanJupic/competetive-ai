@@ -1,41 +1,58 @@
+#![feature(once_cell)]
 #![warn(rust_2018_idioms, unreachable_pub)]
 // #![deny(missing_docs, broken_intra_doc_links)]
 #![recursion_limit = "1024"]
-#![no_std]
-
-extern crate alloc;
-
-use alloc::string::ToString;
-use alloc::vec::Vec;
 
 use seed::{*, prelude::*};
+
+mod space_invaders;
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc<'_> = wee_alloc::WeeAlloc::INIT;
 
-struct Model {}
+struct Model {
+    page: Page,
+    space_invaders: crate::space_invaders::Model,
+}
 
-enum Msg {}
+enum GMsg {
+    SpaceInvaders(crate::space_invaders::Msg)
+}
+
+enum Page {
+    Home,
+    SpaceInvaders,
+}
 
 impl Model {
-    fn init(url: Url, orders: &mut impl Orders<Msg>) -> Self {
-        Self {}
+    fn init(_url: Url, orders: &mut impl Orders<GMsg>) -> Self {
+        Self {
+            // todo
+            page: Page::SpaceInvaders,
+            space_invaders: crate::space_invaders::Model::new(orders),
+        }
     }
 
-    fn update(msg: Msg, model: &mut Self, orders: &mut impl Orders<Msg>) {}
+    fn update(msg: GMsg, model: &mut Self, orders: &mut impl Orders<GMsg>) {
+        match msg {
+            GMsg::SpaceInvaders(msg) => {
+                model.space_invaders.update(msg, orders);
+            }
+        }
+    }
 
-    fn view(&self) -> Vec<Node<Msg>> {
+    fn view(&self) -> Vec<Node<GMsg>> {
         nodes![
             Self::view_header(),
-            Self::view_main(),
+            self.view_main(),
             Self::view_footer(),  
         ]
     }
 
-    fn view_header() -> Node<Msg> {
+    fn view_header() -> Node<GMsg> {
         header![
             nav![
-                C!["navbar", "navbar-dark bg-dark", "navbar-fixed-top"],
+                C!["navbar", "navbar-dark", "bg-dark", "navbar-fixed-top"],
                 div![
                     C!["container-fluid"],
                     a![
@@ -49,7 +66,7 @@ impl Model {
         ]
     }
 
-    fn view_main() -> Node<Msg> {
+    fn view_main(&self) -> Node<GMsg> {
         main![
             C!["container-fluid", "bg-secondary"],
             style! { St::Height => "calc(100vh - 2 * 56px)" },
@@ -58,7 +75,7 @@ impl Model {
                 C!["container-xxl", "d-flex", "align-items-center", "h-100"],
                 div![
                     C!["row", "mx-auto", "mx-md-n5", "h-75", "w-100"],
-                    (1..=2).map(Self::view_team_card)
+                    (1..=1).map(|i| self.view_team_card(i))
                         
                 ],
             ]
@@ -66,7 +83,7 @@ impl Model {
         ]
     }
 
-    fn view_team_card(team: u8) -> Node<Msg> {
+    fn view_team_card(&self, team: u8) -> Node<GMsg> {
         div![
             C![
                 "col", "mx-2", "p-0", "bg-light", "border", "border-light", 
@@ -81,7 +98,9 @@ impl Model {
             div![
                 C!["card-body", "p-0"],
                 style! { St::Background => "#000" },
-                "todo"
+                self.space_invaders
+                    .view()
+                    .map_msg(GMsg::SpaceInvaders)
             ],
             div![
                 C!["card-footer", "bg-light"],
@@ -90,7 +109,7 @@ impl Model {
         ]
     }
 
-    fn view_footer() -> Node<Msg> {
+    fn view_footer() -> Node<GMsg> {
         footer![
             nav![
                 C!["navbar", "navbar-dark", "bg-dark", "navbar-fixed-bottom"],
