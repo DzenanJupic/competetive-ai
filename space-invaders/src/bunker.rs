@@ -1,8 +1,10 @@
 use core::slice::Iter;
 
 use crate::{Bullet, GameObj, GetHit, HitResult, PlayField, Position, Unit, WouldHit};
+use crate::bullet::BulletDirection;
 use crate::cannon::Cannon;
 
+#[derive(Clone, Debug)]
 pub struct Bunkers {
     position: Position,
     bunkers: [Option<Bunker>; Bunkers::BUNKERS],
@@ -43,40 +45,31 @@ impl GameObj for Bunkers {
     }
 }
 
-impl WouldHit for Bunkers {
-    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut dyn GetHit> {
+impl WouldHit<Option<Bunker>> for Bunkers {
+    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut Option<Bunker>> {
         self.bunkers
             .iter_mut()
-            .filter_map(Option::as_mut)
-            .find_map(|b| b.would_hit(bullet))
+            .find_map(|bunker| {
+                bunker
+                    .as_mut()
+                    .and_then(|b| b.would_hit(bullet))
+                    .is_some()
+                    .then_some(bunker)
+            })
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Bunker {
     position: Position,
-    stable: [[bool; Bunker::WIDTH]; Bunker::HEIGHT],
+    stable: [[u8; 3]; 3],
 }
 
 impl Bunker {
-    const STABILITY: [[bool; Self::WIDTH]; Self::HEIGHT] = [
-        [false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false],
-        [false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false],
-        [false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false],
-        [true; 24],
-        [true; 24],
-        [true; 24],
-        [true; 24],
-        [true; 24],
-        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
-        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
-        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
-        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
-        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
-        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
-        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
-        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
-        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
-        [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+    const STABILITY: [[u8; 3]; 3] = [
+        [2, 2, 2],
+        [2, 0, 2],
+        [2, 0, 2],
     ];
 
     pub fn at_position(position: Position) -> Self {
@@ -92,7 +85,7 @@ impl Bunker {
             .all(|row| {
                 row
                     .iter()
-                    .all(|is_stable| !*is_stable)
+                    .all(|&stability| stability == 0)
             })
     }
 }
@@ -106,23 +99,24 @@ impl GameObj for Bunker {
     }
 }
 
-impl WouldHit for Bunker {
-    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut dyn GetHit> {
-        if !self.overlaps(bullet) { return None; }
-        let x = bullet.position().x - self.position.x;
-        let y = bullet.position().y - self.position.y;
+impl WouldHit<Bunker> for Bunker {
+    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut Bunker> {
+        if !self.overlaps(bullet) || bullet.position().y < self.position.y { return None; }
 
-        self
-            .stable[y][x]
+        let x = (bullet.directional_position().x - self.position.x) / (Self::WIDTH / 3);
+        let y = (bullet.directional_position().y - self.position.y) / (Self::HEIGHT / 3);
+        if x == 3 || y == 3 { return None; }
+
+        (self.stable[y][x] > 0)
             .then_some(self)
     }
 }
 
 impl GetHit for Bunker {
     fn hit(&mut self, bullet: &Bullet, _score: &mut i64) -> HitResult {
-        let x = bullet.position().x - self.position.x;
-        let y = bullet.position().y - self.position.y;
-        self.stable[x][y] = false;
+        let x = (bullet.directional_position().x - self.position.x) / (Self::WIDTH / 3);
+        let y = (bullet.directional_position().y - self.position.y) / (Self::HEIGHT / 3);
+        self.stable[y][x] -= 1;
 
         HitResult {
             survived: !self.is_destroyed(),

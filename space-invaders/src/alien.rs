@@ -6,6 +6,7 @@ use rand::Rng;
 use crate::{Bullet, GameObj, GetHit, HitResult, PlayField, Position, Step, StepResult, Unit, WouldHit};
 use crate::bullet::Shot;
 
+#[derive(Clone, Debug)]
 pub struct Aliens {
     position: Position,
     aliens: [[Option<Alien>; Aliens::ROWS]; Aliens::COLUMNS],
@@ -45,7 +46,7 @@ impl Aliens {
 
 impl GameObj for Aliens {
     const WIDTH: usize = Alien::WIDTH * Self::COLUMNS + (Self::COLUMNS - 1) * Self::GRID_GAP;
-    const HEIGHT: usize = Alien::WIDTH * Self::ROWS + (Self::ROWS - 1) * Self::GRID_GAP;
+    const HEIGHT: usize = Alien::HEIGHT * Self::ROWS + (Self::ROWS - 1) * Self::GRID_GAP;
 
     fn position(&self) -> Position {
         self.position
@@ -84,22 +85,23 @@ impl Step for Aliens {
     }
 }
 
-impl WouldHit for Aliens {
-    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut dyn GetHit> {
+impl WouldHit<Option<Alien>> for Aliens {
+    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut Option<Alien>> {
         self.aliens
             .iter_mut()
             .map(|row| row.iter_mut())
             .flatten()
-            .filter(|opt| opt.is_some())
-            .find_map(|o| {
-                match o.as_mut().unwrap().would_hit(bullet) {
-                    Some(alien) => Some(alien),
-                    None => None
-                }
+            .find_map(|alien| {
+                alien
+                    .as_mut()
+                    .and_then(|alien| alien.would_hit(bullet))
+                    .is_some()
+                    .then_some(alien)
             })
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Alien {
     alien_type: AlienType,
     position: Position,
@@ -150,8 +152,8 @@ impl Step for Alien {
 }
 
 
-impl WouldHit for Alien {
-    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut dyn GetHit> {
+impl WouldHit<Alien> for Alien {
+    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut Alien> {
         self
             .overlaps(bullet)
             .then_some(self)

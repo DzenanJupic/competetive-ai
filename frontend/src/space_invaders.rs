@@ -3,18 +3,24 @@ use std::rc::Rc;
 use seed::{*, prelude::*};
 use web_sys::{CanvasRenderingContext2d, Event, HtmlCanvasElement, KeyboardEvent};
 
-use space_invaders::{GameObj, Instruction, PlayField, Position};
+use space_invaders::{GameObj, Instruction, PlayField, Position, Unit};
 use space_invaders::alien::{Alien, Aliens, AlienType};
 use space_invaders::bullet::Bullet;
-use space_invaders::bunker::Bunkers;
+use space_invaders::bunker::{Bunker, Bunkers};
+use space_invaders::cannon::Cannon;
 
 use crate::GMsg;
 
 // About 30 FPS 
 const STEP_MILLI_SECONDS: u32 = 34;
 
+const KEY_ARROW_LEFT: &str = "ArrowLeft";
+const KEY_ARROW_RIGHT: &str = "ArrowRight";
+const KEY_ARROW_SPACE: &str = " ";
+
 thread_local! {
     static RED: Rc<JsValue> = Rc::new(JsValue::from_str("#FF6000"));
+    static DBG_RED: Rc<JsValue> = Rc::new(JsValue::from_str("#F00"));
     static GREEN: Rc<JsValue> = Rc::new(JsValue::from_str("#1BBE81"));
     static WHITE: Rc<JsValue> = Rc::new(JsValue::from_str("#fff"));
 }
@@ -50,6 +56,7 @@ impl Model {
                 GMsg::SpaceInvaders(Msg::KeyBoardEvent(ev.unchecked_into()))
             })
         );
+        window().focus();
 
         let model = Self {
             play_field: PlayField::new(),
@@ -147,6 +154,7 @@ impl Model {
     }
 
     fn draw_aliens(ctx: &CanvasRenderingContext2d, aliens: &Aliens) {
+        Self::draw_dbg::<Aliens>(ctx, aliens.position().x, aliens.position().y);
         aliens
             .iter()
             .map(|col| col.iter())
@@ -172,6 +180,7 @@ impl Model {
     }
 
     fn draw_alien_hard(ctx: &CanvasRenderingContext2d, Position { mut x, y }: Position) {
+        Self::draw_dbg::<Alien>(ctx, x, y);
         // hard aliens are four pixels smaller then easy aliens
         // space invaders centers them, so we do the same
         x += 2;
@@ -192,6 +201,7 @@ impl Model {
     }
 
     fn draw_alien_medium(ctx: &CanvasRenderingContext2d, Position { mut x, y }: Position) {
+        Self::draw_dbg::<Alien>(ctx, x, y);
         // medium aliens are one pixel smaller then easy aliens
         // space invaders aligns them to the right, so we do the same
         x += 1;
@@ -214,6 +224,8 @@ impl Model {
     }
 
     fn draw_alien_easy(ctx: &CanvasRenderingContext2d, Position { x, y }: Position) {
+        Self::draw_dbg::<Alien>(ctx, x, y);
+
         ctx.fill_rect(x as f64 + 4., y as f64 + 0., 4., 1.);
         ctx.fill_rect(x as f64 + 1., y as f64 + 1., 10., 2.);
         ctx.fill_rect(x as f64 + 0., y as f64 + 2., 3., 3.);
@@ -233,6 +245,7 @@ impl Model {
         RED.with(|red| {
             ctx.set_fill_style(red)
         });
+        Self::draw_dbg::<Alien>(ctx, x, y);
 
         todo!()
     }
@@ -241,6 +254,7 @@ impl Model {
         GREEN.with(|green| {
             ctx.set_fill_style(green)
         });
+        Self::draw_dbg::<Bunkers>(ctx, bunkers.position().x, bunkers.position().y);
 
         bunkers
             .iter()
@@ -252,6 +266,7 @@ impl Model {
     }
 
     fn draw_bunker(ctx: &CanvasRenderingContext2d, Position { x, y }: Position) {
+        Self::draw_dbg::<Bunker>(ctx, x, y);
         ctx.fill_rect(x as f64 + 3., y as f64 + 0., 18., 1.);
         ctx.fill_rect(x as f64 + 2., y as f64 + 1., 20., 1.);
         ctx.fill_rect(x as f64 + 1., y as f64 + 2., 22., 1.);
@@ -272,6 +287,7 @@ impl Model {
         GREEN.with(|white| {
             ctx.set_fill_style(white)
         });
+        Self::draw_dbg::<Cannon>(ctx, x, y);
 
         ctx.fill_rect(x as f64 + 7., y as f64 + 0., 1., 1.);
         ctx.fill_rect(x as f64 + 6., y as f64 + 1., 3., 2.);
@@ -291,6 +307,11 @@ impl Model {
 
     fn draw_bullet(ctx: &CanvasRenderingContext2d, Position { x, y }: Position) {
         ctx.fill_rect(x as f64, y as f64, 1., 3.);
+    }
+
+    fn draw_dbg<T: GameObj>(ctx: &CanvasRenderingContext2d, x: Unit, y: Unit) {
+        DBG_RED.with(|red| ctx.set_stroke_style(red));
+        ctx.stroke_rect(x as f64, y as f64, T::WIDTH as f64, T::HEIGHT as f64);
     }
 }
 

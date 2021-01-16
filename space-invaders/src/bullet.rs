@@ -9,6 +9,7 @@ pub enum Shot {
     None,
 }
 
+#[derive(Clone, Debug)]
 pub struct Bullet {
     position: Position,
     direction: BulletDirection,
@@ -47,6 +48,17 @@ impl Bullet {
             alien_type: Some(alien_type),
         }
     }
+
+    pub fn directional_position(&self) -> Position {
+        match self.direction {
+            BulletDirection::Upwards => self.position,
+            BulletDirection::Downwards => {
+                let mut p = self.position;
+                p.y += Self::HEIGHT - 1;
+                p
+            }
+        }
+    }
 }
 
 impl GameObj for Bullet {
@@ -60,10 +72,22 @@ impl GameObj for Bullet {
 
 impl Step for Bullet {
     fn step(&mut self) -> StepResult {
-        match self.direction {
-            BulletDirection::Upwards => self.position.y -= 1,
-            BulletDirection::Downwards => self.position.y += 1,
+        let y = match self.direction {
+            BulletDirection::Upwards => self.position.y.checked_sub(1),
+            BulletDirection::Downwards => self.position.y.checked_add(1),
+        };
+
+        let survived = match y {
+            Some(y) => {
+                self.position.y = y;
+                true
+            },
+            None => false
+        };
+
+        StepResult {
+            survived,
+            shot: Shot::None,
         }
-        StepResult::default()
     }
 }

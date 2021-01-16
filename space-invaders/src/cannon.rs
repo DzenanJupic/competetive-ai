@@ -1,5 +1,6 @@
 use crate::{Bullet, GameObj, GetHit, PlayField, Position, WouldHit};
 
+#[derive(Clone, Debug)]
 pub struct Cannon {
     position: Position
 }
@@ -30,8 +31,8 @@ impl Cannon {
 
     pub(crate) fn shoot(&self) -> Bullet {
         Bullet::player_at_position(Position {
-            x: self.position.x + Self::HEIGHT / 2,
-            y: self.position.y,
+            x: self.position.x + Self::WIDTH / 2,
+            y: self.position.y + 1,
         })
     }
 }
@@ -45,10 +46,9 @@ impl GameObj for Cannon {
     }
 }
 
-impl WouldHit for Cannon {
-    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut dyn GetHit> {
-        self
-            .overlaps(bullet)
+impl WouldHit<Cannon> for Cannon {
+    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut Cannon> {
+        (bullet.is_alien_bullet() && self.overlaps(bullet))
             .then_some(self)
     }
 }

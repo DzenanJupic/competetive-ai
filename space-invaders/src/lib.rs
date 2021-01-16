@@ -35,8 +35,8 @@ impl Position {
         other_width: Unit,
         other_height: Unit,
     ) -> bool {
-        let overlaps_on_x = self.x <= other.x + other_width && other.x <= self.x + self_width;
-        let overlaps_on_y = self.y <= other.y + other_height && other.y <= self.x + self_height;
+        let overlaps_on_x = self.x <= other.x + other_width - 1 && self.x + self_width - 1 >= other.x;
+        let overlaps_on_y = self.y <= other.y + other_height - 1 && self.y + self_height - 1 >= other.y;
 
         overlaps_on_x && overlaps_on_y
     }
@@ -65,31 +65,29 @@ pub trait Step {
     fn step(&mut self) -> StepResult;
 }
 
-pub trait WouldHit {
-    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut dyn GetHit>;
+pub trait WouldHit<T>
+    where T: GetHit {
+    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut T>;
 }
 
-pub trait GetHit: WouldHit {
+pub trait GetHit {
     fn hit(&mut self, _bullet: &Bullet, _score: &mut Score) -> HitResult {
         HitResult::default()
     }
 }
 
-impl<T: WouldHit> WouldHit for &mut Option<T> {
-    fn would_hit(&mut self, bullet: &Bullet) -> Option<&mut dyn GetHit> {
-        match self {
-            Some(inner) => inner.would_hit(bullet),
-            None => None
-        }
-    }
-}
-
-impl<T: GetHit> GetHit for &mut Option<T> {
+impl<T: GetHit> GetHit for Option<T> {
     fn hit(&mut self, bullet: &Bullet, score: &mut i64) -> HitResult {
-        match self {
-            Some(go) => go.hit(bullet, score),
-            None => HitResult { survived: false, absorbed_bullet: false }
+        let hr = match self {
+            Some(inner) => inner.hit(bullet, score),
+            None => HitResult { survived: true, absorbed_bullet: false }
+        };
+
+        if !hr.survived {
+            *self = None;
         }
+
+        hr
     }
 }
 
@@ -196,26 +194,36 @@ impl PlayField {
         let lives = &mut self.lives;
         let cannon = &mut self.cannon;
         let aliens = &mut self.aliens;
+        let bunkers = &mut self.bunkers;
 
         self.bullets.drain_filter(|bullet| {
-            bullet.step();
-
             // bullet is out of field
-            if !Self::overlaps(bullet) {
+            if !bullet.step().survived || !Self::overlaps(bullet) {
+                log::info!("bullet: {:?}", bullet);
                 *score -= 1;
                 return true;
             }
 
             // bullet hit the Cannon
             if let Some(_) = cannon.would_hit(bullet) {
-                *lives -= 1;
+                log::info!("hit cannon | {}", lives);
+                *lives = lives.saturating_sub(1);
                 survived = false;
                 return true;
+            } else if bullet.position().x > cannon.position().x && bullet.position().y > cannon.position().y {
+                log::info!("bullet: {:?} | cannon: {:?}", bullet, cannon)
             }
 
             // bullet hit an Alien
             if let Some(alien) = aliens.would_hit(bullet) {
                 if alien.hit(bullet, score).absorbed_bullet {
+                    return true;
+                }
+            }
+
+            // bullet hit Bunker
+            if let Some(bunker) = bunkers.would_hit(bullet) {
+                if bunker.hit(bullet, score).absorbed_bullet {
                     return true;
                 }
             }
