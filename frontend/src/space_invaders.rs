@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use seed::{*, prelude::*};
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use web_sys::{CanvasRenderingContext2d, Event, HtmlCanvasElement, KeyboardEvent};
 
 use space_invaders::{GameObj, Instruction, PlayField, Position};
 use space_invaders::alien::{Alien, Aliens, AlienType};
@@ -23,6 +23,7 @@ thread_local! {
 pub(crate) struct Model {
     play_field: PlayField,
     canvas: ElRef<HtmlCanvasElement>,
+    keyboard_listener: StreamHandle,
     instruction: Instruction,
     shoot: bool,
     game_state: GameState,
@@ -32,8 +33,7 @@ pub(crate) enum Msg {
     StartGame,
     PauseGame,
     ResetGame,
-    InstructionChanged(Instruction),
-    Shoot,
+    KeyBoardEvent(KeyboardEvent),
     Render,
 }
 
@@ -45,9 +45,16 @@ pub(crate) enum GameState {
 
 impl Model {
     pub(crate) fn new(orders: &mut impl Orders<GMsg>) -> Self {
+        let keyboard_listener = orders.stream_with_handle(
+            streams::window_event(Ev::KeyDown, |ev: Event| {
+                GMsg::SpaceInvaders(Msg::KeyBoardEvent(ev.unchecked_into()))
+            })
+        );
+
         let model = Self {
             play_field: PlayField::new(),
             canvas: ElRef::new(),
+            keyboard_listener,
             instruction: Instruction::None,
             shoot: false,
             game_state: GameState::Running,
@@ -75,11 +82,13 @@ impl Model {
                 self.play_field = PlayField::new();
                 self.game_state = GameState::None;
             }
-            Msg::InstructionChanged(instruction) => {
-                self.instruction = instruction;
-            }
-            Msg::Shoot => {
-                self.shoot = true;
+            Msg::KeyBoardEvent(ev) => {
+                match &*ev.key() {
+                    "ArrowLeft" => self.instruction = Instruction::MoveLeft,
+                    "ArrowRight" => self.instruction = Instruction::MoveRight,
+                    " " => self.shoot = true,
+                    _ => {}
+                }
             }
             Msg::Render => {
                 self.step();
@@ -92,17 +101,22 @@ impl Model {
     pub(crate) fn view(&self) -> Node<Msg> {
         canvas![
             el_ref(&self.canvas),
-            C!["container-fluid"],
+            C!["d-block", "position-absolute", "w-100", "h-100"],
+            style! {
+                St::Top => "0",
+                St::Left => "0",
+            },
             attrs! {
                 At::Width => PlayField::WIDTH,
                 At::Height => PlayField::HEIGHT,
-            },   
+            },
         ]
     }
 
     fn step(&mut self) {
         log::trace!("step: {:?} | shoot: {}", self.instruction, self.shoot);
-        self.play_field.step(self.instruction, self.shoot);
+        let survived = self.play_field.step(self.instruction, self.shoot);
+        log::trace!("player survived: {}", survived);
         self.instruction = Instruction::None;
         self.shoot = false;
     }
@@ -157,7 +171,11 @@ impl Model {
         }
     }
 
-    fn draw_alien_hard(ctx: &CanvasRenderingContext2d, Position { x, y }: Position) {
+    fn draw_alien_hard(ctx: &CanvasRenderingContext2d, Position { mut x, y }: Position) {
+        // hard aliens are four pixels smaller then easy aliens
+        // space invaders centers them, so we do the same
+        x += 2;
+
         ctx.fill_rect(x as f64 + 3., y as f64 + 0., 2., 1.);
         ctx.fill_rect(x as f64 + 2., y as f64 + 1., 4., 1.);
         ctx.fill_rect(x as f64 + 1., y as f64 + 2., 6., 1.);
@@ -173,7 +191,11 @@ impl Model {
         ctx.fill_rect(x as f64 + 6., y as f64 + 7., 1., 1.);
     }
 
-    fn draw_alien_medium(ctx: &CanvasRenderingContext2d, Position { x, y }: Position) {
+    fn draw_alien_medium(ctx: &CanvasRenderingContext2d, Position { mut x, y }: Position) {
+        // medium aliens are one pixel smaller then easy aliens
+        // space invaders aligns them to the right, so we do the same
+        x += 1;
+
         ctx.fill_rect(x as f64 + 2., y as f64 + 0., 1., 1.);
         ctx.fill_rect(x as f64 + 3., y as f64 + 1., 1., 1.);
         ctx.fill_rect(x as f64 + 8., y as f64 + 0., 1., 1.);

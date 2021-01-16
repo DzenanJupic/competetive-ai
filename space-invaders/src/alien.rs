@@ -14,7 +14,7 @@ pub struct Aliens {
 impl Aliens {
     pub const ROWS: usize = 5;
     pub const COLUMNS: usize = 11;
-    pub const GRID_GAP: Unit = Alien::WIDTH / 2;
+    pub const GRID_GAP: Unit = Alien::WIDTH / 3;
 
     pub fn new() -> Self {
         const BASE_POSITION: Position = Position {

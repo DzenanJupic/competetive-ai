@@ -45,7 +45,7 @@ impl Model {
         nodes![
             Self::view_header(),
             self.view_main(),
-            Self::view_footer(),  
+            Self::view_footer(),
         ]
     }
 
@@ -68,27 +68,23 @@ impl Model {
 
     fn view_main(&self) -> Node<GMsg> {
         main![
-            C!["container-fluid", "bg-secondary"],
+            C!["container-fluid", "bg-secondary", "p-0"],
             style! { St::Height => "calc(100vh - 2 * 56px)" },
             
             div![
-                C!["container-xxl", "d-flex", "align-items-center", "h-100"],
-                div![
-                    C!["row", "mx-auto", "mx-md-n5", "h-75", "w-100"],
-                    (1..=1).map(|i| self.view_team_card(i))
-                        
-                ],
-            ]
-            
+                C!["row", "m-0", "w-100", "h-100", "d-flex", "align-items-center", "justify-content-evenly"],
+                (1..=1).map(|i| self.view_team_card(i))
+            ],
         ]
     }
 
     fn view_team_card(&self, team: u8) -> Node<GMsg> {
         div![
             C![
-                "col", "mx-2", "p-0", "bg-light", "border", "border-light", 
-                "border-3", "shadow-lg", "card", "rounded-3", "text-center"
-            ], 
+                "col", "card", "p-0", "mx-3", "bg-light", "border", "border-light", "border-3", "rounded-3",
+                "shadow-lg", "text-center"
+            ],
+            style! { St::MaxWidth => "60vh" }, 
              
             div![
                 C!["card-header", "bg-light"],
@@ -96,8 +92,13 @@ impl Model {
                 team.to_string()
             ],
             div![
-                C!["card-body", "p-0"],
-                style! { St::Background => "#000" },
+                C!["card-body", "position-relative"],
+                style! {
+                    St::Background => "#000",
+                    St::Height => "0",
+                    St::Overflow => "hidden",
+                    St::PaddingTop => "calc(4 / 3 * 100%)" 
+                },
                 self.space_invaders
                     .view()
                     .map_msg(GMsg::SpaceInvaders)
